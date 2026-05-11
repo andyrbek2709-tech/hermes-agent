@@ -1,0 +1,8 @@
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+startCommand = "hermes gateway run"
+restartPolicyType = "ALWAYS"
+restartPolicyMaxRetries = 10
