@@ -1403,9 +1403,15 @@ def _apply_env_overrides(config: GatewayConfig) -> None:
     api_server_enabled = os.getenv("API_SERVER_ENABLED", "").lower() in ("true", "1", "yes")
     api_server_key = os.getenv("API_SERVER_KEY", "")
     api_server_cors_origins = os.getenv("API_SERVER_CORS_ORIGINS", "")
-    api_server_port = os.getenv("API_SERVER_PORT")
+    # PORT is the conventional env var used by Railway, Heroku, Render, etc.
+    # When set, auto-enable the API server so the container passes the health
+    # check; bind to 0.0.0.0 so Railway's proxy can reach it.
+    railway_port = os.getenv("PORT")
+    api_server_port = os.getenv("API_SERVER_PORT") or railway_port
     api_server_host = os.getenv("API_SERVER_HOST")
-    if api_server_enabled or api_server_key:
+    if not api_server_host and railway_port:
+        api_server_host = "0.0.0.0"
+    if api_server_enabled or api_server_key or railway_port:
         if Platform.API_SERVER not in config.platforms:
             config.platforms[Platform.API_SERVER] = PlatformConfig()
         config.platforms[Platform.API_SERVER].enabled = True
