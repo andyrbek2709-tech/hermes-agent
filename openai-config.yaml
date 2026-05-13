@@ -1,0 +1,117 @@
+# Hermes Agent — прямой OpenAI GPT-4o
+# provider: custom + base_url OpenAI — без OpenRouter
+
+model:
+  provider: custom
+  default: gpt-4o
+  base_url: "https://api.openai.com/v1"
+
+inference:
+  provider: custom
+
+fallback_providers:
+  - custom
+
+toolsets:
+  - hermes-cli
+
+agent:
+  max_turns: 90
+  gateway_timeout: 1800
+  restart_drain_timeout: 180
+  api_max_retries: 3
+  tool_use_enforcement: auto
+  gateway_timeout_warning: 900
+  gateway_notify_interval: 180
+  gateway_auto_continue_freshness: 3600
+  image_input_mode: auto
+
+memory:
+  memory_enabled: true
+  user_profile_enabled: true
+  memory_char_limit: 2200
+  user_char_limit: 1375
+
+compression:
+  enabled: true
+  threshold: 0.5
+  target_ratio: 0.2
+  protect_last_n: 20
+
+checkpoints:
+  enabled: true
+  max_snapshots: 20
+  max_total_size_mb: 500
+  max_file_size_mb: 10
+
+skills:
+  template_vars: true
+  inline_shell: true
+  inline_shell_timeout: 10
+
+logging:
+  level: INFO
+
+sessions:
+  auto_prune: false
+  retention_days: 90
+
+profiles:
+  default:
+    model:
+      provider: custom
+      default: gpt-4o
+      base_url: "https://api.openai.com/v1"
+    description: "GPT-4o — основной (баланс)"
+
+  mini:
+    model:
+      provider: custom
+      default: gpt-4o-mini
+      base_url: "https://api.openai.com/v1"
+    description: "GPT-4o-mini — быстрый и дешёвый"
+
+  o3:
+    model:
+      provider: custom
+      default: o3
+      base_url: "https://api.openai.com/v1"
+    description: "o3 — максимум интеллекта"
+
+telegram:
+  reply_to_mode: first
+  http_pool_size: 512
+  http_pool_timeout: 8.0
+
+system_prompt: |
+  Ты — Hermes Agent, персональный AI-ассистент Andrey.
+
+  ОБЯЗАТЕЛЬНЫЕ ПРАВИЛА:
+  - ВСЕГДА отвечай на русском языке
+  - Будь конкретным, кратким, полезным
+  - Не задавай лишних уточняющих вопросов — действуй
+  - Помни контекст из MEMORY.md и USER.md
+  - Сообщай какую модель используешь когда переключаешься
+
+  МОДЕЛИ:
+  - default → GPT-4o (баланс)
+  - mini → GPT-4o-mini (быстро/дёшево)
+  - o3 → o3 (максимум интеллекта)
+
+  ВОЗМОЖНОСТИ:
+  - 87 встроенных навыков
+  - Cron-задачи по расписанию
+  - Память между сессиями
+  - Telegram интеграция
+
+  СТИЛЬ:
+  - Дружелюбный, без подобострастия
+  - Без длинных предисловий
+  - Сразу к делу
+  - Markdown для структурирования
+
+  ПОЛЬЗОВАТЕЛЬ:
+  - Имя: Andrey
+  - Telegram ID: 463076251
+  - Часовой пояс: GMT+5 (Актау, Казахстан)
+  - Язык: русский

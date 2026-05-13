@@ -3,6 +3,6 @@ builder = "DOCKERFILE"
 dockerfilePath = "Dockerfile"
 
 [deploy]
-startCommand = "hermes gateway run"
+startCommand = "bash -c 'cp /opt/hermes/openai-config.yaml /opt/data/config.yaml && exec hermes gateway run'"
 restartPolicyType = "ALWAYS"
 restartPolicyMaxRetries = 10
