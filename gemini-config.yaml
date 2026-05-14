@@ -1,6 +1,7 @@
 # Hermes Agent — Gemini primary + GLM-4.7 fallback
 # Провайдеры: Google Gemini, Z.AI (GLM), Anthropic
 # Без OpenRouter, без OpenAI
+# Updated: 2026-05-14 22:14
 
 model:
   provider: gemini
