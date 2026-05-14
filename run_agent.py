@@ -978,7 +978,11 @@ def _routermint_headers() -> dict:
 
 
 def _pool_may_recover_from_rate_limit(
-    pool, *, provider: str | None = None, base_url: str | None = None
+    pool,
+    *,
+    provider: str | None = None,
+    base_url: str | None = None,
+    error_message: str | None = None,
 ) -> bool:
     """Decide whether to wait for credential-pool rotation instead of falling back.
 
@@ -996,6 +1000,10 @@ def _pool_may_recover_from_rate_limit(
     throttles — even a multi-entry pool shares the same quota window, so
     rotation won't recover.  Skip straight to the fallback for those (#13636).
 
+    Gemini free-tier 429s signal a per-key daily quota exhaustion — rotating
+    to another free-tier key in the pool hits the same cap immediately.
+    Skip pool rotation and prefer the configured fallback provider.
+
     In those cases we must fall back to the configured ``fallback_model``
     instead.  Returns True only when rotation has somewhere to go.
 
@@ -1008,6 +1016,11 @@ def _pool_may_recover_from_rate_limit(
     # CloudCode / Gemini CLI quotas are account-wide — all pool entries share
     # the same throttle window, so rotation can't recover.  Prefer fallback.
     if provider == "google-gemini-cli" or str(base_url or "").startswith("cloudcode-pa://"):
+        return False
+    # Gemini free-tier daily quota: per-key limit that resets once per day.
+    # Additional pool entries are typically on the same free-tier cap, so
+    # rotation burns the retry budget without recovering.  Prefer fallback.
+    if error_message and "free_tier" in error_message.lower():
         return False
     return len(pool.entries()) > 1
 
@@ -13535,12 +13548,13 @@ class AIAgent:
                     if is_rate_limited and self._fallback_index < len(self._fallback_chain):
                         # Don't eagerly fallback if credential pool rotation may
                         # still recover.  See _pool_may_recover_from_rate_limit
-                        # for the single-credential-pool and CloudCode-quota
-                        # exceptions.  Fixes #11314 and #13636.
+                        # for the single-credential-pool, CloudCode-quota, and
+                        # Gemini free-tier exceptions.  Fixes #11314 and #13636.
                         pool_may_recover = _pool_may_recover_from_rate_limit(
                             self._credential_pool,
                             provider=self.provider,
                             base_url=getattr(self, "base_url", None),
+                            error_message=str(api_error),
                         )
                         if not pool_may_recover:
                             self._emit_status("⚠️ Rate limited — switching to fallback provider...")

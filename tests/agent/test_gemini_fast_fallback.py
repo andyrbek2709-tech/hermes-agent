@@ -60,3 +60,56 @@ def test_exhausted_pool_skips_rotation():
 
 def test_no_pool_skips_rotation():
     assert _pool_may_recover_from_rate_limit(None) is False
+
+
+class TestGeminiFreeTierSkipsPoolRotation:
+    """Free-tier Gemini quota exhaustion should bypass pool rotation."""
+
+    def test_free_tier_error_skips_rotation_even_with_multi_entry_pool(self):
+        # A multi-entry pool would normally allow rotation, but a free-tier
+        # daily quota 429 won't recover — skip to fallback immediately.
+        free_tier_msg = (
+            "Gemini HTTP 429 (RESOURCE_EXHAUSTED): Quota exceeded for metric: "
+            "generativelanguage.googleapis.com/generate_content_free_tier_input_token_count"
+        )
+        assert _pool_may_recover_from_rate_limit(
+            _pool(entries=3),
+            provider="gemini",
+            base_url="https://generativelanguage.googleapis.com/v1beta",
+            error_message=free_tier_msg,
+        ) is False
+
+    def test_free_tier_requests_metric_also_skips_rotation(self):
+        free_tier_msg = (
+            "Quota exceeded for metric: "
+            "generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20"
+        )
+        assert _pool_may_recover_from_rate_limit(
+            _pool(entries=2),
+            provider="gemini",
+            error_message=free_tier_msg,
+        ) is False
+
+    def test_non_free_tier_429_still_allows_pool_rotation(self):
+        # A transient rate limit (not free-tier) on a multi-entry pool should
+        # still go through pool rotation.
+        paid_rate_limit_msg = "Gemini HTTP 429 (RESOURCE_EXHAUSTED): Rate limit exceeded"
+        assert _pool_may_recover_from_rate_limit(
+            _pool(entries=3),
+            provider="gemini",
+            base_url="https://generativelanguage.googleapis.com/v1beta",
+            error_message=paid_rate_limit_msg,
+        ) is True
+
+    def test_no_error_message_falls_through_to_pool_size_check(self):
+        # No error_message → existing pool-size logic applies.
+        assert _pool_may_recover_from_rate_limit(
+            _pool(entries=3),
+            provider="gemini",
+            error_message=None,
+        ) is True
+        assert _pool_may_recover_from_rate_limit(
+            _pool(entries=1),
+            provider="gemini",
+            error_message=None,
+        ) is False
