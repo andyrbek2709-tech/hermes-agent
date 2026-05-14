@@ -16,7 +16,7 @@ Usage:
 Environment Variables:
     TINKER_API_KEY: API key for Tinker service (required)
     WANDB_API_KEY: API key for WandB metrics (required)
-    OPENROUTER_API_KEY: API key for OpenRouter (required for agent)
+    GEMINI_API_KEY: API key for Google Gemini (required for agent)
 """
 
 import asyncio
@@ -27,7 +27,7 @@ from pathlib import Path
 import fire
 import yaml
 
-from hermes_constants import OPENROUTER_BASE_URL, get_hermes_home
+from hermes_constants import GEMINI_BASE_URL, get_hermes_home
 
 # Load .env from ~/.hermes/.env first, then project root as dev fallback.
 # User-managed env files should override stale shell exports on restart.
@@ -63,7 +63,7 @@ from tools.rl_training_tool import get_missing_keys
 # ============================================================================
 
 DEFAULT_MODEL = "anthropic/claude-opus-4.5"
-DEFAULT_BASE_URL = OPENROUTER_BASE_URL
+DEFAULT_BASE_URL = GEMINI_BASE_URL
 
 
 def load_hermes_config() -> dict:
@@ -180,10 +180,11 @@ RL_TOOLSETS = ["terminal", "web", "rl"]
 def check_requirements():
     """Check that all required environment variables and services are available."""
     errors = []
-    
+
     # Check API keys
-    if not os.getenv("OPENROUTER_API_KEY"):
-        errors.append("OPENROUTER_API_KEY not set - required for agent")
+    gemini_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+    if not gemini_key:
+        errors.append("GEMINI_API_KEY (or GOOGLE_API_KEY) not set - required for agent")
     
     missing_rl_keys = get_missing_keys()
     if missing_rl_keys:
@@ -250,8 +251,8 @@ def main(
     Args:
         task: The training task/goal (e.g., "Train a model on GSM8k for math")
         model: Model to use for the agent (reads from ~/.hermes/config.yaml if not provided)
-        api_key: OpenRouter API key (uses OPENROUTER_API_KEY env var if not provided)
-        base_url: API base URL (reads from config or defaults to OpenRouter)
+        api_key: Gemini API key (uses GEMINI_API_KEY or GOOGLE_API_KEY env var if not provided)
+        base_url: API base URL (reads from config or defaults to Gemini)
         max_iterations: Maximum agent iterations (default: 200 for long workflows)
         interactive: Run in interactive mode (multiple conversations)
         list_environments: Just list available RL environments and exit
@@ -355,9 +356,9 @@ def main(
         return
     
     # Get API key
-    api_key = api_key or os.getenv("OPENROUTER_API_KEY")
+    api_key = api_key or os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
     if not api_key:
-        print("❌ No API key provided. Set OPENROUTER_API_KEY or pass --api-key")
+        print("❌ No API key provided. Set GEMINI_API_KEY (or GOOGLE_API_KEY) or pass --api-key")
         sys.exit(1)
     
     print(f"\n🤖 Model: {model}")

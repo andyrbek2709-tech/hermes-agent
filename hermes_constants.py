@@ -342,4 +342,6 @@ def apply_ipv4_preference(force: bool = False) -> None:
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 OPENROUTER_MODELS_URL = f"{OPENROUTER_BASE_URL}/models"
 
+GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta"
+
 AI_GATEWAY_BASE_URL = "https://ai-gateway.vercel.sh/v1"
