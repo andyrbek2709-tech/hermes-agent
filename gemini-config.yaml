@@ -1,0 +1,163 @@
+# Hermes Agent — Gemini primary + GLM-4.7 fallback
+# Провайдеры: Google Gemini, Z.AI (GLM), Anthropic
+# Без OpenRouter, без OpenAI
+
+model:
+  provider: gemini
+  default: gemini-2.5-flash
+
+# Автоматический fallback на GLM-4.7 когда Gemini rate limit или недоступен
+fallback_model:
+  provider: zai
+  model: glm-4.7
+
+agent:
+  max_turns: 90
+  gateway_timeout: 1800
+  restart_drain_timeout: 180
+  api_max_retries: 3
+  tool_use_enforcement: auto
+  gateway_timeout_warning: 900
+  gateway_notify_interval: 180
+  gateway_auto_continue_freshness: 3600
+  image_input_mode: auto
+
+memory:
+  memory_enabled: true
+  user_profile_enabled: true
+  memory_char_limit: 2200
+  user_char_limit: 1375
+  nudge_interval: 10
+  flush_min_turns: 6
+
+compression:
+  enabled: true
+  threshold: 0.40
+  target_ratio: 0.20
+  protect_last_n: 20
+
+# Вспомогательные модели: GLM-4.7 для компрессии (204k контекст),
+# Gemini для vision (нативная поддержка изображений)
+auxiliary:
+  compression:
+    provider: zai
+    model: glm-4.7
+  vision:
+    provider: gemini
+    model: gemini-2.5-flash
+  web_extract:
+    provider: zai
+    model: glm-4.7
+
+checkpoints:
+  enabled: true
+  max_snapshots: 20
+  max_total_size_mb: 500
+  max_file_size_mb: 10
+
+sessions:
+  auto_prune: false
+  retention_days: 90
+
+session_reset:
+  mode: both
+  idle_minutes: 1440
+  at_hour: 4
+
+logging:
+  level: INFO
+
+telegram:
+  reply_to_mode: first
+  http_pool_size: 512
+  http_pool_timeout: 8.0
+
+display:
+  cleanup_progress: true
+  tool_progress: all
+  interim_assistant_messages: true
+
+# Быстрые переключатели моделей через /model
+model_aliases:
+  flash:
+    model: gemini-2.5-flash
+    provider: gemini
+  pro:
+    model: gemini-3.1-pro-preview
+    provider: gemini
+  lite:
+    model: gemini-3.1-flash-lite-preview
+    provider: gemini
+  glm:
+    model: glm-4.7
+    provider: zai
+  claude:
+    model: claude-sonnet-4-5
+    provider: anthropic
+
+# Профили для /profile
+profiles:
+  default:
+    model:
+      provider: gemini
+      default: gemini-2.5-flash
+    description: "Gemini 2.5 Flash — основной"
+
+  pro:
+    model:
+      provider: gemini
+      default: gemini-3.1-pro-preview
+    description: "Gemini 3.1 Pro — максимум"
+
+  lite:
+    model:
+      provider: gemini
+      default: gemini-3.1-flash-lite-preview
+    description: "Gemini Flash Lite — быстрый"
+
+  glm:
+    model:
+      provider: zai
+      default: glm-4.7
+    description: "GLM-4.7 — fallback"
+
+  claude:
+    model:
+      provider: anthropic
+      default: claude-sonnet-4-5
+    description: "Claude Sonnet — Anthropic"
+
+system_prompt: |
+  Ты — Hermes Agent, персональный AI-ассистент Andrey.
+
+  ОБЯЗАТЕЛЬНЫЕ ПРАВИЛА:
+  - ВСЕГДА отвечай на русском языке
+  - Будь конкретным, кратким, полезным
+  - Не задавай лишних уточняющих вопросов — действуй
+  - Помни контекст из MEMORY.md и USER.md
+  - Сообщай какую модель используешь когда переключаешься
+
+  МОДЕЛИ:
+  - flash (default) → Gemini 2.5 Flash (баланс скорость/качество)
+  - pro → Gemini 3.1 Pro (сложные задачи)
+  - lite → Gemini Flash Lite (быстро/дёшево)
+  - glm → GLM-4.7 Z.AI (fallback)
+  - claude → Claude Sonnet (Anthropic)
+
+  ВОЗМОЖНОСТИ:
+  - 87 встроенных навыков
+  - Cron-задачи по расписанию
+  - Память между сессиями
+  - Telegram интеграция
+
+  СТИЛЬ:
+  - Дружелюбный, без подобострастия
+  - Без длинных предисловий
+  - Сразу к делу
+  - Markdown для структурирования
+
+  ПОЛЬЗОВАТЕЛЬ:
+  - Имя: Andrey
+  - Telegram ID: 463076251
+  - Часовой пояс: GMT+5 (Актау, Казахстан)
+  - Язык: русский
