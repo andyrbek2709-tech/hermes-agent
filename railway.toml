@@ -1,0 +1,34 @@
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[ports]
+# Critical ports for Hermes Agent services
+8000 = "Dashboard (HERMES_DASHBOARD_PORT)"
+8080 = "API Server"
+9000 = "Gateway (HERMES_GATEWAY_PORT)"
+3000 = "Web UI"
+5000 = "Alternative API"
+
+[deploy]
+# Railway routes *.railway.app to $PORT and expects HTTP. `hermes gateway run`
+# does not bind PORT. Use docker/railway-start.sh (via bash so entrypoint still
+# bootstraps venv + HERMES_HOME) for gateway in background + dashboard on $PORT.
+#
+# In Railway Variables: turn OFF HERMES_DASHBOARD / HERMES_DASHBOARD_PORT when using
+# this script (avoid two dashboards). Set GEMINI_API_KEY or GOOGLE_API_KEY.
+#
+# CRITICAL — Settings → Networking → Public Networking "target port" must match
+# the port the dashboard binds to: docker/railway-start.sh uses $PORT (Railway's
+# injected port, often 8080). If the UI shows → Port 9119 while logs show 8080,
+# the edge proxy hits the wrong socket → 502 / "Application failed to respond".
+# Fix: set the public target port to the same value as $PORT, OR set variable PORT=9119
+# and point public networking at 9119 so both sides agree.
+#
+# Explicit probe: the SPA + session middleware are heavier than a plain JSON ping;
+# routing can stay on "failed to respond" if the default probe path never returns 200 in time.
+healthcheckPath = "/healthz"
+healthcheckTimeout = 300
+startCommand = "bash -c 'exec /opt/hermes/docker/railway-start.sh'"
+restartPolicyType = "ALWAYS"
+restartPolicyMaxRetries = 10
