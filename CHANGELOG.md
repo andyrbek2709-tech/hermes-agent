@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - SOUL.md now fully defined (was placeholder)
 - Improved documentation structure
+- Enable Anthropic prompt caching with 1h TTL in anthropic-config.yaml (was disabled by default) — reduces input token cost ~5-10x on typical Hermes workloads with heavy tool-use roundtrips
 
 ## [1.0.0] - 2026-05-18
 
