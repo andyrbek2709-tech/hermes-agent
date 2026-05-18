@@ -44,6 +44,14 @@ RUN cp /opt/hermes/anthropic-config.yaml /opt/hermes/cli-config.yaml.example && 
     chmod 0755 /opt/hermes/docker/entrypoint.sh /opt/hermes/docker/railway-start.sh && \
     chmod -R a+rX /opt/hermes
 
+# Detect web asset path and bake it into the venv activate script so that
+# `hermes dashboard` can find its SPA regardless of Python version in site-packages.
+RUN web_dist="$(/opt/hermes/.venv/bin/python3 -c \
+      "import hermes_cli, os; print(os.path.join(os.path.dirname(hermes_cli.__file__), 'web_dist'))" \
+    2>/dev/null)" && \
+    [ -n "$web_dist" ] && \
+    echo "export HERMES_WEB_DIST=${web_dist}" >> /opt/hermes/.venv/bin/activate || true
+
 ENV HERMES_HOME=/opt/data
 
 ENTRYPOINT ["/usr/bin/tini", "-g", "--", "/opt/hermes/docker/entrypoint.sh"]
