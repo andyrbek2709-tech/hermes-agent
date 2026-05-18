@@ -1,4 +1,3 @@
-FROM tianon/gosu:1.19-trixie AS gosu_source
 FROM debian:13.4
 
 ENV PYTHONUNBUFFERED=1
@@ -11,27 +10,35 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     procps openssh-client && \
     rm -rf /var/lib/apt/lists/*
 
-# gosu: used by entrypoint.sh to drop from root to the hermes user
-COPY --chmod=0755 --from=gosu_source /gosu /usr/local/bin/
+# gosu: privilege-drop helper used by entrypoint.sh (root -> hermes user)
+RUN dpkgArch="$(dpkg --print-architecture | awk -F- '{print $NF}')" && \
+    curl -fsSL "https://github.com/tianon/gosu/releases/download/1.17/gosu-${dpkgArch}" \
+         -o /usr/local/bin/gosu && \
+    chmod +x /usr/local/bin/gosu && \
+    gosu --version
 
 RUN useradd -u 10000 -m -d /opt/data hermes
 
-# Install hermes from PyPI into a venv at the path entrypoint/railway-start.sh expect
-RUN mkdir -p /opt/hermes && python3 -m venv /opt/hermes/.venv
+# Install hermes into a venv; entrypoint.sh and railway-start.sh expect
+# the CLI at ${INSTALL_DIR}/.venv/bin/hermes = /opt/hermes/.venv/bin/hermes
+RUN mkdir -p /opt/hermes && \
+    python3 -m venv /opt/hermes/.venv && \
+    /opt/hermes/.venv/bin/pip install --upgrade pip
+
 RUN /opt/hermes/.venv/bin/pip install --no-cache-dir "hermes-agent[all]"
 
-# Playwright browser (stored outside /opt/data so it survives volume mounts)
+# Playwright browser (stored outside /opt/data so it survives Railway volume mounts)
 RUN /opt/hermes/.venv/bin/playwright install --with-deps chromium
 
 # Deployment scripts and provider config
 COPY docker/ /opt/hermes/docker/
 COPY anthropic-config.yaml /opt/hermes/
 
-# entrypoint.sh copies these on first boot; use anthropic-config as the default
+# entrypoint.sh copies cli-config.yaml.example on first boot — use our
+# anthropic config as the seed so the default provider is always Anthropic
 RUN cp /opt/hermes/anthropic-config.yaml /opt/hermes/cli-config.yaml.example && \
-    touch /opt/hermes/.env.example
-
-RUN chmod 0755 /opt/hermes/docker/entrypoint.sh /opt/hermes/docker/railway-start.sh && \
+    touch /opt/hermes/.env.example && \
+    chmod 0755 /opt/hermes/docker/entrypoint.sh /opt/hermes/docker/railway-start.sh && \
     chmod -R a+rX /opt/hermes
 
 ENV HERMES_HOME=/opt/data
