@@ -212,6 +212,25 @@ Look for:
 - Missing API keys (ANTHROPIC_API_KEY, etc.)
 - Socket errors on port 9000
 
+### `/model` switched provider but bot stops responding
+
+The upstream `/model` picker shows all providers regardless of whether their
+API key is configured. If you select one without a key, the switch is written
+to `/opt/data/config.yaml` but the next message fails.
+
+**Auto-recovery (built-in)**: `railway-start.sh` detects this on the next boot
+and reseeds with `HERMES_PROVIDER_CONFIG` (default `gemini`). Just trigger a
+redeploy from Railway. Old config is backed up to `/opt/data/config.yaml.bak`.
+
+To opt out, set `HERMES_DISABLE_AUTO_RECOVERY=1`.
+
+To pick a different fallback provider, set `HERMES_PROVIDER_CONFIG=openai|zai|anthropic`.
+
+### Bot shows raw `gateway.model.*` keys instead of text
+
+Upstream i18n bug in Hermes v0.14.x — incomplete Russian locale. Workaround:
+add `HERMES_LOCALE=en` to Railway Variables and redeploy.
+
 ### Permission denied on /opt/data
 
 Ensure volume owner matches HERMES_UID:

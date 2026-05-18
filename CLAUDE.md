@@ -90,9 +90,28 @@ gateway.reset.tip
 
 Hermes v0.14.0 ships an incomplete Russian locale; keys exist for English but
 not Russian. **Do not try to fix from this repo** — it lives inside the PyPI
-package. Bot is functionally fine; only the labels look broken. Workaround
-(if confirmed to work): set `HERMES_LOCALE=en` (verify upstream support
-before suggesting).
+package. Bot is functionally fine; only the labels look broken. Workaround:
+set `HERMES_LOCALE=en` in Railway Variables — switches the bot to the
+English locale which has complete translations. Applied automatically if
+you copy current `.env.example` to Railway.
+
+### `/model` menu does not filter providers by available API keys (upstream)
+
+The provider picker in `/model` shows ALL providers (OpenRouter, GitHub Copilot,
+Anthropic, OpenAI, Google, Z.AI) regardless of which `*_API_KEY` env vars are
+actually set. Selecting one whose key is missing produces an apparent switch
+(written to `config.yaml`) but the next user message fails on the missing key.
+
+Two mitigations live in THIS repo:
+1. `docker/railway-start.sh` auto-recovery (`b1` series) — on boot, if the
+   provider written in `config.yaml` has no matching key in env, reseed from
+   `HERMES_PROVIDER_CONFIG` (default `gemini`). Backs up to `config.yaml.bak`.
+   Opt out via `HERMES_DISABLE_AUTO_RECOVERY=1`.
+2. Educate users: in Telegram, only pick providers you've actually configured.
+
+Real fix has to land upstream — open an issue at
+https://github.com/NousResearch/hermes-agent/issues asking for the picker to
+hide providers with no `*_API_KEY` set.
 
 ### Gateway "already running" infinite loop (regression watch)
 

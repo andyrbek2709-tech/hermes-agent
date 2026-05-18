@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Provider auto-recovery in `railway-start.sh`**: if `/opt/data/config.yaml` points to a provider whose API key is not set in env (e.g. user switched to Anthropic via `/model`, then Anthropic billing got paused and the key was removed), the next boot detects the mismatch and reseeds from the default seed (`HERMES_PROVIDER_CONFIG`, default `gemini`). Backs up the old config to `config.yaml.bak`. Opt out via `HERMES_DISABLE_AUTO_RECOVERY=1`.
+
+### Added
+- `HERMES_LOCALE=en` recommended in `.env.example` as a workaround for the upstream i18n key leak (Hermes v0.14.x shows raw `gateway.model.*` strings on Russian locale).
+- Documentation note: `/model` menu does not filter providers by available API keys (upstream bug). Selecting a provider whose key is absent will appear to switch but then fail on the next message.
+
 ### Added
 - README with deployment instructions
 - .gitignore for secrets and build artifacts

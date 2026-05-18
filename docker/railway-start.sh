@@ -49,7 +49,33 @@ fi
 # then unset it once the new seed is in place).
 # Override seed source via HERMES_PROVIDER_CONFIG=gemini|anthropic|openai
 # (matches <name>-config.yaml in /opt/hermes/).
-if [[ -f "${HERMES_HOME}/config.yaml" ]] && [[ "${HERMES_FORCE_RESEED:-}" != "1" ]]; then
+# Auto-recovery: if the active provider in config.yaml has no API key in env,
+# treat it as broken and re-seed from default. Prevents the bot from being
+# stuck on a dead provider (e.g. Anthropic with paused billing) after the
+# user switched providers via /model and then the relevant key was removed.
+# Set HERMES_DISABLE_AUTO_RECOVERY=1 to opt out.
+AUTO_RECOVER=0
+if [[ -f "${HERMES_HOME}/config.yaml" ]] && [[ "${HERMES_DISABLE_AUTO_RECOVERY:-}" != "1" ]]; then
+  ACTIVE_PROVIDER="$(sed -n "s/^[[:space:]]*provider:[[:space:]]*[\"']\?\([a-zA-Z]*\)[\"']\?[[:space:]]*$/\1/p" "${HERMES_HOME}/config.yaml" | head -1)"
+  case "${ACTIVE_PROVIDER}" in
+    anthropic)
+      if [[ -z "${ANTHROPIC_API_KEY:-}" ]]; then AUTO_RECOVER=1; fi ;;
+    openai)
+      if [[ -z "${OPENAI_API_KEY:-}" ]]; then AUTO_RECOVER=1; fi ;;
+    gemini|google)
+      if [[ -z "${GOOGLE_API_KEY:-}" ]] && [[ -z "${GEMINI_API_KEY:-}" ]]; then AUTO_RECOVER=1; fi ;;
+    zai)
+      if [[ -z "${ZAI_API_KEY:-}" ]]; then AUTO_RECOVER=1; fi ;;
+    openrouter)
+      if [[ -z "${OPENROUTER_API_KEY:-}" ]]; then AUTO_RECOVER=1; fi ;;
+  esac
+  if [[ "${AUTO_RECOVER}" == "1" ]]; then
+    echo "[startup] AUTO-RECOVERY: active provider '${ACTIVE_PROVIDER}' has no API key in env — reseeding"
+    cp -f "${HERMES_HOME}/config.yaml" "${HERMES_HOME}/config.yaml.bak"
+  fi
+fi
+
+if [[ -f "${HERMES_HOME}/config.yaml" ]] && [[ "${HERMES_FORCE_RESEED:-}" != "1" ]] && [[ "${AUTO_RECOVER}" != "1" ]]; then
   echo "[startup] Preserving existing config.yaml — managed via /model command"
 else
   if [[ "${HERMES_FORCE_RESEED:-}" == "1" ]] && [[ -f "${HERMES_HOME}/config.yaml" ]]; then
