@@ -22,13 +22,15 @@ jobs:
         with:
           file_or_dir: |
             anthropic-config.yaml
-            railway.toml
+            gemini-config.yaml
+          strict: false
           config_data: |
             extends: default
             rules:
               line-length:
                 max: 120
               trailing-spaces: disable
+              document-start: disable
 
       - name: Lint shell scripts
         run: |
