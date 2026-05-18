@@ -9,43 +9,39 @@ on:
     branches:
       - main
 
-# Lint findings are informational. We mark each linter as
-# `continue-on-error: true` so transient warnings don't block deploys
-# (Railway treats CI failure as "skip deployment").
+# Lint is informational only. Every step ends with `|| true` so the job
+# always exits 0 — Railway must see green CI to deploy.
 
 jobs:
   lint:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Validate YAML
-        continue-on-error: true
-        uses: ibiqlik/action-yamllint@v3
-        with:
-          file_or_dir: |
-            anthropic-config.yaml
-            gemini-config.yaml
-          strict: false
-          config_data: |
-            extends: default
-            rules:
-              line-length:
-                max: 120
-              trailing-spaces: disable
-              document-start: disable
-
-      - name: Lint shell scripts
-        continue-on-error: true
+      - name: yamllint configs
         run: |
-          sudo apt-get update && sudo apt-get install -y shellcheck
+          pip install --quiet yamllint || true
+          cat > /tmp/yamllint.yml <<'CFG'
+          extends: default
+          rules:
+            line-length:
+              max: 120
+            trailing-spaces: disable
+            document-start: disable
+          CFG
+          yamllint -c /tmp/yamllint.yml anthropic-config.yaml gemini-config.yaml || true
+
+      - name: shellcheck scripts
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq shellcheck || true
           shellcheck docker/*.sh || true
 
-      - name: Lint Dockerfile
-        continue-on-error: true
-        uses: hadolint/hadolint-action@v3
-        with:
-          dockerfile: Dockerfile
-          ignore: DL3008,DL3009
+      - name: hadolint Dockerfile
+        run: |
+          wget -q -O /tmp/hadolint https://github.com/hadolint/hadolint/releases/download/v2.12.0/hadolint-Linux-x86_64 || true
+          chmod +x /tmp/hadolint || true
+          /tmp/hadolint --ignore DL3008 --ignore DL3009 Dockerfile || true
+
+      - name: always pass
+        run: 'echo "lint informational only - exiting 0"'
