@@ -1,11 +1,15 @@
 #!/usr/bin/env bash
-# Railway: HTTP on $PORT (dashboard) + Telegram gateway in background.
-# Invoked as: bash -c 'exec /opt/hermes/docker/railway-start.sh'
-# so docker/entrypoint.sh runs first (dirs, optional HERMES_DASHBOARD).
+# Railway: dashboard on $PORT (background, health checks) +
+# gateway in a supervised restart loop.
+#
+# WHY THIS EXISTS: the previous script did `gateway run &` then `exec dashboard`.
+# When the user sends /restart via Telegram the gateway exits, but the dashboard
+# keeps the container alive — so the bot stays dead until a manual Railway restart.
+# This script wraps the gateway in a restart loop so it recovers automatically.
 #
 # Public URL 502? In Railway → Settings → Networking, the "target port" for your
 # *.up.railway.app domain MUST match $PORT here (see deploy logs, e.g. 8080).
-# A stale "→ Port 9119" routes traffic to the wrong socket.
+#
 # We do NOT rely on PATH: Railway may exec this script without entrypoint's
 # `source .venv/bin/activate`, and Railpack images may omit the shim entirely.
 # Use the venv console script path baked into the official Dockerfile layout.
@@ -15,7 +19,7 @@
 # For 502 / edge timeouts during debugging: HERMES_RAILWAY_SKIP_GATEWAY=1 runs
 # only the dashboard on $PORT (no background gateway).
 
-set -euo pipefail
+set -uo pipefail
 
 # Railway environment variables (automatically injected)
 export RAILWAY_ENVIRONMENT="${RAILWAY_ENVIRONMENT:-development}"
@@ -26,10 +30,6 @@ INSTALL_DIR="${INSTALL_DIR:-/opt/hermes}"
 HERMES_HOME="${HERMES_HOME:-/opt/data}"
 VENV_BIN="${INSTALL_DIR}/.venv/bin"
 HERMES_CLI="${VENV_BIN}/hermes"
-
-# Logging configuration
-exec 3>&1 4>&2
-trap 'echo "ERROR: Railway startup failed at line $LINENO" >&3; exit 1' ERR
 
 if [[ ! -x "${HERMES_CLI}" ]]; then
   echo "error: Hermes CLI not found at ${HERMES_CLI} (wrong image or build stage?)" >&2
@@ -54,7 +54,44 @@ DASH_PORT="${PORT:-9119}"
 # issues (502 / "failed to respond") from the Telegram gateway subprocess.
 if [[ "${HERMES_RAILWAY_SKIP_GATEWAY:-}" == "1" ]]; then
   echo "HERMES_RAILWAY_SKIP_GATEWAY=1 — skipping background gateway"
-else
-  "${HERMES_CLI}" gateway run &
+  exec "${HERMES_CLI}" dashboard --host 0.0.0.0 --port "${DASH_PORT}" --insecure --no-open
 fi
-exec "${HERMES_CLI}" dashboard --host 0.0.0.0 --port "${DASH_PORT}" --insecure --no-open
+
+# Start the dashboard in the background so it survives gateway restarts and
+# continues to serve Railway health checks on $PORT.
+"${HERMES_CLI}" dashboard --host 0.0.0.0 --port "${DASH_PORT}" --insecure --no-open &
+DASH_PID=$!
+echo "Dashboard started (PID ${DASH_PID}) on port ${DASH_PORT}"
+
+# On exit (SIGTERM from Railway, CTRL-C, etc.) cleanly stop the dashboard too.
+cleanup() {
+  echo "Shutting down..."
+  kill "${DASH_PID}" 2>/dev/null || true
+  wait "${DASH_PID}" 2>/dev/null || true
+}
+trap cleanup EXIT INT TERM
+
+# Gateway restart loop.
+# Sending /restart via Telegram causes the gateway process to exit; we restart
+# it here automatically so the bot recovers without a manual Railway restart.
+RESTART_DELAY=3
+while true; do
+  echo "Starting gateway..."
+  "${HERMES_CLI}" gateway run &
+  GATEWAY_PID=$!
+
+  # Wait for the gateway to exit, checking every 2 s that the dashboard is
+  # still alive.  If the dashboard dies we exit so Railway restarts the container.
+  while kill -0 "${GATEWAY_PID}" 2>/dev/null; do
+    if ! kill -0 "${DASH_PID}" 2>/dev/null; then
+      echo "Dashboard exited unexpectedly; triggering container restart"
+      kill "${GATEWAY_PID}" 2>/dev/null || true
+      exit 1
+    fi
+    sleep 2
+  done
+
+  wait "${GATEWAY_PID}" || true
+  echo "Gateway exited; restarting in ${RESTART_DELAY}s..."
+  sleep "${RESTART_DELAY}"
+done
