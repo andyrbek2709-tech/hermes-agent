@@ -27,6 +27,14 @@ RUN mkdir -p /opt/hermes && \
 
 RUN /opt/hermes/.venv/bin/pip install --no-cache-dir "hermes-agent[all]"
 
+# HERMES-PATCH: preserve /model selection across /new — see
+# docker/patch_hermes.py for the bug description and the exact 4-line
+# block we comment out in gateway/run.py.
+COPY docker/patch_hermes.py /tmp/patch_hermes.py
+RUN /opt/hermes/.venv/bin/python /tmp/patch_hermes.py \
+      "$(/opt/hermes/.venv/bin/python -c 'import sys; print(sys.prefix + "/lib/python" + sys.version[:4] + "/site-packages")')" \
+    && rm /tmp/patch_hermes.py
+
 # playwright executable is not shipped by hermes-agent[all]; install the Python
 # package for import compatibility but skip the ~700 MB browser download —
 # the Telegram gateway doesn't need a browser.
