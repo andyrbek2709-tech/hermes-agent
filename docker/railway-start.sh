@@ -44,11 +44,18 @@ if [[ -z "${HERMES_WEB_DIST:-}" ]]; then
   fi
 fi
 
-# Seed config.yaml on first boot only; preserve user's /model selection on restarts.
-# Override seed via HERMES_PROVIDER_CONFIG=gemini|anthropic|openai (matches *-config.yaml).
-if [[ -f "${HERMES_HOME}/config.yaml" ]]; then
+# Seed config.yaml on first boot, OR when HERMES_FORCE_RESEED=1 is set (one-shot
+# override to recover from a stuck/dead provider — set the env var, redeploy,
+# then unset it once the new seed is in place).
+# Override seed source via HERMES_PROVIDER_CONFIG=gemini|anthropic|openai
+# (matches <name>-config.yaml in /opt/hermes/).
+if [[ -f "${HERMES_HOME}/config.yaml" ]] && [[ "${HERMES_FORCE_RESEED:-}" != "1" ]]; then
   echo "[startup] Preserving existing config.yaml — managed via /model command"
 else
+  if [[ "${HERMES_FORCE_RESEED:-}" == "1" ]] && [[ -f "${HERMES_HOME}/config.yaml" ]]; then
+    cp -f "${HERMES_HOME}/config.yaml" "${HERMES_HOME}/config.yaml.bak"
+    echo "[startup] HERMES_FORCE_RESEED=1 — backed up old config.yaml to config.yaml.bak"
+  fi
   SEED_NAME="${HERMES_PROVIDER_CONFIG:-gemini}"
   SEED_PATH="${INSTALL_DIR}/${SEED_NAME}-config.yaml"
   if [[ ! -f "${SEED_PATH}" ]] && [[ -f "${INSTALL_DIR}/gemini-config.yaml" ]]; then
@@ -58,7 +65,7 @@ else
   fi
   if [[ -f "${SEED_PATH}" ]]; then
     cp -f "${SEED_PATH}" "${HERMES_HOME}/config.yaml"
-    echo "[startup] Seeded config.yaml from $(basename "${SEED_PATH}") (first boot)"
+    echo "[startup] Seeded config.yaml from $(basename "${SEED_PATH}")"
   else
     echo "[startup] WARNING: no seed config found in ${INSTALL_DIR}"
   fi
@@ -119,10 +126,13 @@ cleanup() {
 trap cleanup EXIT INT TERM
 
 # Gateway restart loop — /restart in Telegram exits the gateway; restart it here.
+# --replace: kill any stale PID-file owner before binding. Without this, a hung
+# gateway from a previous container instance leaves a PID file that blocks every
+# subsequent boot in an infinite "Gateway already running" restart loop.
 RESTART_DELAY=3
 while true; do
   echo "[startup] Starting gateway..."
-  "${HERMES_CLI}" gateway run 2>&1 &
+  "${HERMES_CLI}" gateway run --replace 2>&1 &
   GATEWAY_PID=$!
 
   while kill -0 "${GATEWAY_PID}" 2>/dev/null; do

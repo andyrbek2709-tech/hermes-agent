@@ -21,6 +21,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - gemini-config.yaml: new default seed config using Google Gemini 2.5 Flash (main + vision + compression) and gemini-2.5-flash-lite (title)
 - HERMES_PROVIDER_CONFIG env var: selects which `<name>-config.yaml` to use as first-boot seed (default: gemini)
+- HERMES_FORCE_RESEED env var: one-shot override to overwrite an existing /opt/data/config.yaml (backs up to config.yaml.bak) — useful for recovering from a stuck dead-provider config
+
+### Fixed
+- Gateway restart loop: pass --replace to `hermes gateway run` so a stale PID file from a previous container instance doesn't block every subsequent boot with "Gateway already running" errors
 
 ### Changed
 - SOUL.md now fully defined (was placeholder)
