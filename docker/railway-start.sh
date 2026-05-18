@@ -41,8 +41,11 @@ fi
 # shellcheck source=/dev/null
 [[ -f "${VENV_BIN}/activate" ]] && source "${VENV_BIN}/activate"
 
-# Never fail startup if a bundled template is missing (image mismatch / old layer).
-if [[ -f "${INSTALL_DIR}/openai-config.yaml" ]]; then
+# Apply provider config on every start so Railway env-var changes take effect.
+# Priority: anthropic > openai > gemini (pick the first file that exists in the image).
+if [[ -f "${INSTALL_DIR}/anthropic-config.yaml" ]]; then
+  cp -f "${INSTALL_DIR}/anthropic-config.yaml" "${HERMES_HOME}/config.yaml" || true
+elif [[ -f "${INSTALL_DIR}/openai-config.yaml" ]]; then
   cp -f "${INSTALL_DIR}/openai-config.yaml" "${HERMES_HOME}/config.yaml" || true
 elif [[ -f "${INSTALL_DIR}/gemini-config.yaml" ]]; then
   cp -f "${INSTALL_DIR}/gemini-config.yaml" "${HERMES_HOME}/config.yaml" || true
