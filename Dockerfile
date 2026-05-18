@@ -27,11 +27,10 @@ RUN mkdir -p /opt/hermes && \
 
 RUN /opt/hermes/.venv/bin/pip install --no-cache-dir "hermes-agent[all]"
 
-# playwright executable is not shipped by hermes-agent[all]; install it explicitly
+# playwright executable is not shipped by hermes-agent[all]; install the Python
+# package for import compatibility but skip the ~700 MB browser download —
+# the Telegram gateway doesn't need a browser.
 RUN /opt/hermes/.venv/bin/pip install --no-cache-dir playwright
-
-# Playwright browser (stored outside /opt/data so it survives Railway volume mounts)
-RUN /opt/hermes/.venv/bin/playwright install --with-deps chromium
 
 # Deployment scripts and provider config
 COPY docker/ /opt/hermes/docker/
