@@ -1,0 +1,14 @@
+model:
+  default: "gemini-2.5-flash"
+  provider: "gemini"
+
+auxiliary:
+  vision:
+    provider: "gemini"
+    model: "gemini-2.5-flash"
+  compression:
+    provider: "gemini"
+    model: "gemini-2.5-flash"
+  title:
+    provider: "gemini"
+    model: "gemini-2.5-flash-lite"
