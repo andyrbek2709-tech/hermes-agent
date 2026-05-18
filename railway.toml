@@ -27,8 +27,8 @@ dockerfilePath = "Dockerfile"
 #
 # Explicit probe: the SPA + session middleware are heavier than a plain JSON ping;
 # routing can stay on "failed to respond" if the default probe path never returns 200 in time.
-healthcheckPath = "/healthz"
-healthcheckTimeout = 300
+healthcheckPath = "/"
+healthcheckTimeout = 120
 startCommand = "bash -c 'exec /opt/hermes/docker/railway-start.sh'"
 restartPolicyType = "ALWAYS"
 restartPolicyMaxRetries = 10
