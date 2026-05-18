@@ -32,13 +32,15 @@ RUN /opt/hermes/.venv/bin/pip install --no-cache-dir "hermes-agent[all]"
 # the Telegram gateway doesn't need a browser.
 RUN /opt/hermes/.venv/bin/pip install --no-cache-dir playwright
 
-# Deployment scripts and provider config
+# Deployment scripts and provider configs
 COPY docker/ /opt/hermes/docker/
-COPY anthropic-config.yaml /opt/hermes/
+COPY anthropic-config.yaml gemini-config.yaml /opt/hermes/
 
-# entrypoint.sh copies cli-config.yaml.example on first boot — use our
-# anthropic config as the seed so the default provider is always Anthropic
-RUN cp /opt/hermes/anthropic-config.yaml /opt/hermes/cli-config.yaml.example && \
+# entrypoint.sh copies cli-config.yaml.example on first boot — use Gemini as the
+# default seed (cheap, multimodal, large context). railway-start.sh picks the
+# seed based on HERMES_PROVIDER_CONFIG env var, defaulting to gemini-config.yaml.
+# Switch providers in Telegram via /model — selection persists in /opt/data.
+RUN cp /opt/hermes/gemini-config.yaml /opt/hermes/cli-config.yaml.example && \
     touch /opt/hermes/.env.example && \
     chmod 0755 /opt/hermes/docker/entrypoint.sh /opt/hermes/docker/railway-start.sh && \
     chmod -R a+rX /opt/hermes

@@ -18,10 +18,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - GitHub Container Registry (ghcr.io) auto-publish on tag
 - Docker image validation tests in CI
 
+### Added
+- gemini-config.yaml: new default seed config using Google Gemini 2.5 Flash (main + vision + compression) and gemini-2.5-flash-lite (title)
+- HERMES_PROVIDER_CONFIG env var: selects which `<name>-config.yaml` to use as first-boot seed (default: gemini)
+
 ### Changed
 - SOUL.md now fully defined (was placeholder)
 - Improved documentation structure
 - Enable Anthropic prompt caching with 1h TTL in anthropic-config.yaml (was disabled by default) — reduces input token cost ~5-10x on typical Hermes workloads with heavy tool-use roundtrips
+- Default seed provider switched from Anthropic Claude Haiku to Google Gemini 2.5 Flash (cheaper, multimodal, 1M context). Anthropic config preserved for users who switch back via /model
+- railway-start.sh now seeds /opt/data/config.yaml only on first boot; subsequent restarts preserve user's /model selection from Telegram
 
 ## [1.0.0] - 2026-05-18
 

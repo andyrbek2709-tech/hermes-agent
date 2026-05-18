@@ -72,20 +72,36 @@ Then visit `http://localhost:9119` for the dashboard.
 
 ### Model Provider
 
-Edit `anthropic-config.yaml` to change default model:
+**Default:** Google Gemini 2.5 Flash (cheap, multimodal, 1M context). Configure
+your provider key in **Railway Variables**:
+
+```
+GOOGLE_API_KEY=...            # for Gemini (default)
+ANTHROPIC_API_KEY=sk-...      # for Claude
+OPENAI_API_KEY=sk-...         # for GPT
+ZAI_API_KEY=...               # for Z.AI / GLM
+OPENROUTER_API_KEY=sk-or-...  # for OpenRouter aggregator
+```
+
+**Switch providers live in Telegram via `/model`** — pick from OpenRouter,
+GitHub Copilot, Z.AI, Google, Anthropic, OpenAI. Your selection persists in
+`/opt/data/config.yaml` across container restarts.
+
+**Change the first-boot seed** (applied only on a fresh volume) via env var:
+
+```
+HERMES_PROVIDER_CONFIG=gemini      # default
+HERMES_PROVIDER_CONFIG=anthropic
+```
+
+The seed comes from `<name>-config.yaml` in the repo root. Edit
+`gemini-config.yaml` directly to change the default model:
 
 ```yaml
 model:
-  default: "claude-opus-4-1"  # Change this
-  provider: "anthropic"
+  default: "gemini-2.5-flash"   # Change this
+  provider: "gemini"
 ```
-
-Or override with **Railway Variables**:
-```
-ANTHROPIC_API_KEY=sk-...
-```
-
-For other providers (OpenAI, Gemini), add their config files to `/opt/hermes/`.
 
 ### Agent Personality (SOUL.md)
 

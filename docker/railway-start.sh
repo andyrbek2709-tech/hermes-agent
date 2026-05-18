@@ -44,14 +44,24 @@ if [[ -z "${HERMES_WEB_DIST:-}" ]]; then
   fi
 fi
 
-# Apply provider config on every start so Railway env-var changes take effect.
-if [[ -f "${INSTALL_DIR}/anthropic-config.yaml" ]]; then
-  cp -f "${INSTALL_DIR}/anthropic-config.yaml" "${HERMES_HOME}/config.yaml" || true
-  echo "[startup] Applied anthropic-config.yaml"
-elif [[ -f "${INSTALL_DIR}/openai-config.yaml" ]]; then
-  cp -f "${INSTALL_DIR}/openai-config.yaml" "${HERMES_HOME}/config.yaml" || true
-elif [[ -f "${INSTALL_DIR}/gemini-config.yaml" ]]; then
-  cp -f "${INSTALL_DIR}/gemini-config.yaml" "${HERMES_HOME}/config.yaml" || true
+# Seed config.yaml on first boot only; preserve user's /model selection on restarts.
+# Override seed via HERMES_PROVIDER_CONFIG=gemini|anthropic|openai (matches *-config.yaml).
+if [[ -f "${HERMES_HOME}/config.yaml" ]]; then
+  echo "[startup] Preserving existing config.yaml — managed via /model command"
+else
+  SEED_NAME="${HERMES_PROVIDER_CONFIG:-gemini}"
+  SEED_PATH="${INSTALL_DIR}/${SEED_NAME}-config.yaml"
+  if [[ ! -f "${SEED_PATH}" ]] && [[ -f "${INSTALL_DIR}/gemini-config.yaml" ]]; then
+    SEED_PATH="${INSTALL_DIR}/gemini-config.yaml"
+  elif [[ ! -f "${SEED_PATH}" ]] && [[ -f "${INSTALL_DIR}/anthropic-config.yaml" ]]; then
+    SEED_PATH="${INSTALL_DIR}/anthropic-config.yaml"
+  fi
+  if [[ -f "${SEED_PATH}" ]]; then
+    cp -f "${SEED_PATH}" "${HERMES_HOME}/config.yaml"
+    echo "[startup] Seeded config.yaml from $(basename "${SEED_PATH}") (first boot)"
+  else
+    echo "[startup] WARNING: no seed config found in ${INSTALL_DIR}"
+  fi
 fi
 
 DASH_PORT="${PORT:-9119}"
