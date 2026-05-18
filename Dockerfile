@@ -45,11 +45,15 @@ RUN cp /opt/hermes/anthropic-config.yaml /opt/hermes/cli-config.yaml.example && 
 
 # Detect web asset path and bake it into the venv activate script so that
 # `hermes dashboard` can find its SPA regardless of Python version in site-packages.
-RUN web_dist="$(/opt/hermes/.venv/bin/python3 -c \
-      "import hermes_cli, os; print(os.path.join(os.path.dirname(hermes_cli.__file__), 'web_dist'))" \
-    2>/dev/null)" && \
-    [ -n "$web_dist" ] && \
-    echo "export HERMES_WEB_DIST=${web_dist}" >> /opt/hermes/.venv/bin/activate || true
+# Uses find rather than a fragile Python import so any module name works.
+RUN web_dist="$(find /opt/hermes/.venv -name 'web_dist' -type d 2>/dev/null | head -1)" && \
+    if [ -n "$web_dist" ]; then \
+      echo "export HERMES_WEB_DIST=${web_dist}" >> /opt/hermes/.venv/bin/activate && \
+      echo "[build] Baked HERMES_WEB_DIST=${web_dist}"; \
+    else \
+      echo "[build] WARNING: web_dist not found — dashboard SPA may not load"; \
+      find /opt/hermes/.venv/lib -maxdepth 4 -name '*.dist-info' -type d | head -10 || true; \
+    fi
 
 ENV HERMES_HOME=/opt/data
 
