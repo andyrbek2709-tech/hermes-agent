@@ -25,10 +25,10 @@ dockerfilePath = "Dockerfile"
 # Fix: set the public target port to the same value as $PORT, OR set variable PORT=9119
 # and point public networking at 9119 so both sides agree.
 #
-# Explicit probe: the SPA + session middleware are heavier than a plain JSON ping;
 # routing can stay on "failed to respond" if the default probe path never returns 200 in time.
-healthcheckPath = "/"
-healthcheckTimeout = 120
+# No healthcheckPath: Hermes is a Telegram-bot worker, not a web service.
+# Railway falls back to "process alive = healthy". The dashboard (if present)
+# is a bonus and must not gate deploys.
 startCommand = "bash -c 'exec /opt/hermes/docker/railway-start.sh'"
 restartPolicyType = "ALWAYS"
 restartPolicyMaxRetries = 10
