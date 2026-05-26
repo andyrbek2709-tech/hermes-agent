@@ -7,7 +7,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential curl nodejs npm \
     python3 python3-pip python3-venv \
     ripgrep ffmpeg git tini \
-    procps openssh-client && \
+    procps openssh-client libopus0 portaudio19-dev && \
     rm -rf /var/lib/apt/lists/*
 
 # gosu: privilege-drop helper used by entrypoint.sh (root -> hermes user)
@@ -40,8 +40,22 @@ RUN /opt/hermes/.venv/bin/python /tmp/patch_hermes.py \
 # the Telegram gateway doesn't need a browser.
 RUN /opt/hermes/.venv/bin/pip install --no-cache-dir playwright
 
-# Deployment scripts and provider configs
+# Install specialized Python dependencies for the advanced agent skills
+RUN /opt/hermes/.venv/bin/pip install --no-cache-dir \
+    youtube-transcript-api \
+    pymupdf \
+    pygithub \
+    notion-client \
+    jupyter-client \
+    ipykernel \
+    faster-whisper
+
+# Install Chromium browser and its system dependencies for local browsing
+RUN /opt/hermes/.venv/bin/playwright install --with-deps chromium
+
+# Deployment scripts, advanced skills, and provider configs
 COPY docker/ /opt/hermes/docker/
+COPY skills/ /opt/hermes/skills/
 COPY anthropic-config.yaml gemini-config.yaml dual-config.yaml /opt/hermes/
 
 # entrypoint.sh copies cli-config.yaml.example on first boot — use dual-config.yaml as the

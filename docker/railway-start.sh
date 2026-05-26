@@ -99,6 +99,13 @@ else
   fi
 fi
 
+# Sync advanced skills to the persistent home directory on boot
+if [[ -d "${INSTALL_DIR}/skills" ]]; then
+  echo "[startup] Syncing advanced skills to ${HERMES_HOME}/skills/..."
+  mkdir -p "${HERMES_HOME}/skills"
+  cp -rf "${INSTALL_DIR}/skills/"* "${HERMES_HOME}/skills/"
+fi
+
 DASH_PORT="${PORT:-9119}"
 DASH_LOG="/tmp/hermes-dashboard.log"
 
