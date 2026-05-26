@@ -82,9 +82,11 @@ else
     cp -f "${HERMES_HOME}/config.yaml" "${HERMES_HOME}/config.yaml.bak"
     echo "[startup] HERMES_FORCE_RESEED=1 — backed up old config.yaml to config.yaml.bak"
   fi
-  SEED_NAME="${HERMES_PROVIDER_CONFIG:-gemini}"
+  SEED_NAME="${HERMES_PROVIDER_CONFIG:-dual}"
   SEED_PATH="${INSTALL_DIR}/${SEED_NAME}-config.yaml"
-  if [[ ! -f "${SEED_PATH}" ]] && [[ -f "${INSTALL_DIR}/gemini-config.yaml" ]]; then
+  if [[ ! -f "${SEED_PATH}" ]] && [[ -f "${INSTALL_DIR}/dual-config.yaml" ]]; then
+    SEED_PATH="${INSTALL_DIR}/dual-config.yaml"
+  elif [[ ! -f "${SEED_PATH}" ]] && [[ -f "${INSTALL_DIR}/gemini-config.yaml" ]]; then
     SEED_PATH="${INSTALL_DIR}/gemini-config.yaml"
   elif [[ ! -f "${SEED_PATH}" ]] && [[ -f "${INSTALL_DIR}/anthropic-config.yaml" ]]; then
     SEED_PATH="${INSTALL_DIR}/anthropic-config.yaml"

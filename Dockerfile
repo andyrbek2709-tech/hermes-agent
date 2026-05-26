@@ -42,16 +42,16 @@ RUN /opt/hermes/.venv/bin/pip install --no-cache-dir playwright
 
 # Deployment scripts and provider configs
 COPY docker/ /opt/hermes/docker/
-COPY anthropic-config.yaml gemini-config.yaml /opt/hermes/
+COPY anthropic-config.yaml gemini-config.yaml dual-config.yaml /opt/hermes/
 
-# entrypoint.sh copies cli-config.yaml.example on first boot — use Gemini as the
-# default seed (cheap, multimodal, large context). railway-start.sh picks the
-# seed based on HERMES_PROVIDER_CONFIG env var, defaulting to gemini-config.yaml.
+# entrypoint.sh copies cli-config.yaml.example on first boot — use dual-config.yaml as the
+# default seed (supporting Gemini + Anthropic Claude + Z.AI GLM).
 # Switch providers in Telegram via /model — selection persists in /opt/data.
-RUN cp /opt/hermes/gemini-config.yaml /opt/hermes/cli-config.yaml.example && \
+RUN cp /opt/hermes/dual-config.yaml /opt/hermes/cli-config.yaml.example && \
     touch /opt/hermes/.env.example && \
     chmod 0755 /opt/hermes/docker/entrypoint.sh /opt/hermes/docker/railway-start.sh && \
     chmod -R a+rX /opt/hermes
+
 
 # Detect web asset path and bake it into the venv activate script so that
 # `hermes dashboard` can find its SPA regardless of Python version in site-packages.

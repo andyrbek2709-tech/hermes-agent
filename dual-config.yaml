@@ -1,0 +1,155 @@
+# ============================================================
+# HERMES AGENT CONFIG — GEMINI + ANTHROPIC CLAUDE + Z.AI
+# Без OpenRouter.
+# По умолчанию: Google Gemini (Gemini 2.5/3.1 Flash)
+# ============================================================
+
+model:
+  provider: gemini
+  default: gemini-2.5-flash
+  max_tokens: 65536
+
+# Только direct провайдеры в fallback
+fallback_providers:
+  - provider: anthropic
+    model: claude-sonnet-4-5
+  - provider: zai
+    model: glm-4.7
+
+toolsets:
+  - hermes-cli
+
+agent:
+  max_turns: 90
+  gateway_timeout: 1800
+  restart_drain_timeout: 180
+  api_max_retries: 3
+  tool_use_enforcement: auto
+  gateway_timeout_warning: 900
+  gateway_notify_interval: 180
+  gateway_auto_continue_freshness: 3600
+  image_input_mode: auto
+
+memory:
+  memory_enabled: true
+  user_profile_enabled: true
+  memory_char_limit: 8000
+  user_char_limit: 4000
+
+compression:
+  enabled: true
+  threshold: 0.5
+  target_ratio: 0.2
+  protect_last_n: 20
+
+checkpoints:
+  enabled: true
+  max_snapshots: 20
+  max_total_size_mb: 500
+  max_file_size_mb: 10
+
+skills:
+  template_vars: true
+  inline_shell: true
+  inline_shell_timeout: 10
+
+logging:
+  level: INFO
+
+sessions:
+  auto_prune: false
+  retention_days: 90
+
+# ============================================================
+# ПРОФИЛИ — переключение в Telegram через /model
+# ============================================================
+
+profiles:
+  default:
+    model:
+      provider: gemini
+      default: gemini-2.5-flash
+    description: "Gemini 2.5 Flash — основной (по умолчанию)"
+
+  gemini-flash:
+    model:
+      provider: gemini
+      default: gemini-2.5-flash
+    description: "Gemini 2.5 Flash — быстрый и дешёвый"
+
+  claude:
+    model:
+      provider: anthropic
+      default: claude-sonnet-4-5
+    description: "Claude Sonnet 4.5"
+
+  sonnet:
+    model:
+      provider: anthropic
+      default: claude-sonnet-4-5
+    description: "Алиас Sonnet 4.5"
+
+  haiku:
+    model:
+      provider: anthropic
+      default: claude-haiku-4-5
+    description: "Claude Haiku 4.5"
+
+  opus:
+    model:
+      provider: anthropic
+      default: claude-opus-4-7
+    description: "Claude Opus 4.7"
+
+  glm:
+    model:
+      provider: zai
+      default: glm-4.7
+    description: "GLM-4.7 (z.ai)"
+
+# ============================================================
+# TELEGRAM
+# ============================================================
+
+telegram:
+  reply_to_mode: first
+  http_pool_size: 512
+  http_pool_timeout: 8.0
+
+# ============================================================
+# СИСТЕМНЫЙ ПРОМПТ
+# ============================================================
+
+system_prompt: |
+  Ты — Hermes Agent, персональный AI-ассистент <USER>.
+
+  ОБЯЗАТЕЛЬНЫЕ ПРАВИЛА:
+  - ВСЕГДА отвечай на русском языке
+  - Будь конкретным, кратким, полезным
+  - Не задавай лишних уточняющих вопросов — действуй
+  - Помни контекст из MEMORY.md и USER.md
+  - Сообщай какую модель используешь когда переключаешься
+
+  МОДЕЛИ:
+  - default / (новая сессия) → Gemini (Google AI Studio)
+  - gemini-flash → Gemini Flash
+  - claude / sonnet → Claude Sonnet 4.5
+  - haiku → Claude Haiku 4.5
+  - opus → Claude Opus 4.7
+  - glm → GLM-4.7 (z.ai)
+
+  ВОЗМОЖНОСТИ:
+  - Навыки (skills), cron, память между сессиями, инструменты Hermes
+  - Telegram и другие платформы через gateway
+
+  СТИЛЬ:
+  - Дружелюбный, без подобострастия
+  - Без длинных предисловий
+  - Сразу к делу
+  - Markdown для структурирования
+
+  ПОЛЬЗОВАТЕЛЬ:
+  - Имя: <USER>
+  - Telegram ID: <YOUR_TELEGRAM_ID>
+  - Часовой пояс: GMT+5 (<YOUR_LOCATION>)
+  - Язык: русский
