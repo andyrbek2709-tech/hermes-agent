@@ -62,6 +62,12 @@ COPY plugins/ /opt/hermes/plugins/
 COPY locales/ /opt/hermes/locales/
 COPY anthropic-config.yaml gemini-config.yaml dual-config.yaml /opt/hermes/
 
+# Copy plugins and locales to the correct site-packages paths so the Python application can resolve them
+RUN site_packages="$(/opt/hermes/.venv/bin/python -c 'import sys; print(sys.prefix + "/lib/python" + sys.version[:4] + "/site-packages")')" && \
+    cp -rf /opt/hermes/plugins "$site_packages/plugins" && \
+    cp -rf /opt/hermes/locales "$site_packages/locales"
+
+
 # entrypoint.sh copies cli-config.yaml.example on first boot — use dual-config.yaml as the
 # default seed (supporting Gemini + Anthropic Claude + Z.AI GLM).
 # Switch providers in Telegram via /model — selection persists in /opt/data.
