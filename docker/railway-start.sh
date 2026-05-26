@@ -75,12 +75,17 @@ if [[ -f "${HERMES_HOME}/config.yaml" ]] && [[ "${HERMES_DISABLE_AUTO_RECOVERY:-
   fi
 fi
 
-if [[ -f "${HERMES_HOME}/config.yaml" ]] && [[ "${HERMES_FORCE_RESEED:-}" != "1" ]] && [[ "${AUTO_RECOVER}" != "1" ]]; then
+RESET_CONFIG=0
+if [[ "${HERMES_FORCE_RESEED:-}" == "1" ]] || [[ "${HERMES_RESET_CONFIG:-}" == "1" ]]; then
+  RESET_CONFIG=1
+fi
+
+if [[ -f "${HERMES_HOME}/config.yaml" ]] && [[ "${RESET_CONFIG}" != "1" ]] && [[ "${AUTO_RECOVER}" != "1" ]]; then
   echo "[startup] Preserving existing config.yaml — managed via /model command"
 else
-  if [[ "${HERMES_FORCE_RESEED:-}" == "1" ]] && [[ -f "${HERMES_HOME}/config.yaml" ]]; then
+  if [[ "${RESET_CONFIG}" == "1" ]] && [[ -f "${HERMES_HOME}/config.yaml" ]]; then
     cp -f "${HERMES_HOME}/config.yaml" "${HERMES_HOME}/config.yaml.bak"
-    echo "[startup] HERMES_FORCE_RESEED=1 — backed up old config.yaml to config.yaml.bak"
+    echo "[startup] Reset config triggered — backed up old config.yaml to config.yaml.bak"
   fi
   SEED_NAME="${HERMES_PROVIDER_CONFIG:-dual}"
   SEED_PATH="${INSTALL_DIR}/${SEED_NAME}-config.yaml"
