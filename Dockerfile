@@ -55,9 +55,11 @@ RUN /opt/hermes/.venv/bin/pip install --no-cache-dir \
 # Install Chromium browser and its system dependencies for local browsing
 RUN /opt/hermes/.venv/bin/playwright install --with-deps chromium
 
-# Deployment scripts, advanced skills, and provider configs
+# Deployment scripts, advanced skills, plugins, locales, and provider configs
 COPY docker/ /opt/hermes/docker/
 COPY skills/ /opt/hermes/skills/
+COPY plugins/ /opt/hermes/plugins/
+COPY locales/ /opt/hermes/locales/
 COPY anthropic-config.yaml gemini-config.yaml dual-config.yaml /opt/hermes/
 
 # entrypoint.sh copies cli-config.yaml.example on first boot — use dual-config.yaml as the
