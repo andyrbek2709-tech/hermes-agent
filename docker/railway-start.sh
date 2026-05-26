@@ -75,6 +75,15 @@ if [[ -f "${HERMES_HOME}/config.yaml" ]] && [[ "${HERMES_DISABLE_AUTO_RECOVERY:-
   fi
 fi
 
+# Auto-recovery: if config.yaml is missing the stt config block, force reseed so voice transcription works automatically.
+if [[ -f "${HERMES_HOME}/config.yaml" ]] && [[ "${HERMES_DISABLE_AUTO_RECOVERY:-}" != "1" ]]; then
+  if ! grep -q "^stt:" "${HERMES_HOME}/config.yaml"; then
+    echo "[startup] AUTO-RECOVERY: stt configuration block is missing in config.yaml — forcing reseed"
+    AUTO_RECOVER=1
+    cp -f "${HERMES_HOME}/config.yaml" "${HERMES_HOME}/config.yaml.bak"
+  fi
+fi
+
 RESET_CONFIG=0
 if [[ "${HERMES_FORCE_RESEED:-}" == "1" ]] || [[ "${HERMES_RESET_CONFIG:-}" == "1" ]]; then
   RESET_CONFIG=1
