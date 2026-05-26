@@ -48,7 +48,9 @@ RUN /opt/hermes/.venv/bin/pip install --no-cache-dir \
     notion-client \
     jupyter-client \
     ipykernel \
-    faster-whisper
+    faster-whisper \
+    openpyxl \
+    pillow
 
 # Install Chromium browser and its system dependencies for local browsing
 RUN /opt/hermes/.venv/bin/playwright install --with-deps chromium
