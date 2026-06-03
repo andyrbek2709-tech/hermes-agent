@@ -1,4 +1,4 @@
-Имя: <USER>. Telegram ID: <YOUR_TELEGRAM_ID>. Часовой пояс: GMT+5 (<YOUR_LOCATION>).
+Имя: <YOUR_NAME>. Telegram ID: <YOUR_TELEGRAM_ID>. Часовой пояс: <YOUR_TIMEZONE>.
 §
 Язык общения: русский. Объяснять простым языком — пользователь не программист.
 §
