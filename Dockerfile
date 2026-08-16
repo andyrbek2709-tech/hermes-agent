@@ -19,13 +19,13 @@ RUN dpkgArch="$(dpkg --print-architecture | awk -F- '{print $NF}')" && \
 
 RUN useradd -u 10000 -m -d /opt/data hermes
 
-# Install hermes into a venv; entrypoint.sh and railway-start.sh expect
-# the CLI at ${INSTALL_DIR}/.venv/bin/hermes = /opt/hermes/.venv/bin/hermes
+# Pin the exact Hermes release that was current when this fork last ran on Railway.
+# This prevents a future Docker rebuild from silently changing agent behaviour.
 RUN mkdir -p /opt/hermes && \
     python3 -m venv /opt/hermes/.venv && \
     /opt/hermes/.venv/bin/pip install --upgrade pip
 
-RUN /opt/hermes/.venv/bin/pip install --no-cache-dir "hermes-agent[all]"
+RUN /opt/hermes/.venv/bin/pip install --no-cache-dir "hermes-agent[all]==0.15.2"
 
 # HERMES-PATCH: preserve /model selection across /new — see
 # docker/patch_hermes.py for the bug description and the exact 4-line
