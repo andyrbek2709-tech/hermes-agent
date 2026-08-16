@@ -58,10 +58,8 @@ Write-Host "DATA: $DataDir"
 Write-Host ''
 
 # Docker must already be running.
-try {
-    docker info *> $null
-}
-catch {
+docker info *> $null
+if ($LASTEXITCODE -ne 0) {
     throw 'Docker Desktop не запущен. Запустите Docker Desktop и повторите setup-local.ps1.'
 }
 
