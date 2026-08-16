@@ -1,0 +1,31 @@
+services:
+  hermes:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: andrey-hermes-local:0.15.2
+    container_name: hermes-local
+    restart: unless-stopped
+    env_file:
+      - ../data/.env
+    environment:
+      HERMES_HOME: /opt/data
+      HOME: /opt/data/home
+      PYTHONUNBUFFERED: "1"
+    volumes:
+      - ../data:/opt/data
+    entrypoint:
+      - /usr/bin/tini
+      - -g
+      - --
+      - /bin/bash
+      - /opt/hermes/docker/local-entrypoint.sh
+    command:
+      - gateway
+      - run
+      - --replace
+
+# Intentionally no published ports and no Docker socket mount.
+# Telegram uses outbound long polling. The container can persist only in
+# D:\Hermes\data (mounted as /opt/data); the rest of the Windows filesystem is
+# not mounted into Hermes.
